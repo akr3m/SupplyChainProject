@@ -161,18 +161,24 @@ App = {
                 return await App.addRetailer(event);
                 break;
             case 9:
-                return await App.receiveItem(event);
+                return await App.transferOwnershipToRetailer(event);
                 break;
             case 10:
-                return await App.addConsumer(event);
+                return await App.receiveItem(event);
                 break;
             case 11:
-                return await App.purchaseItem(event);
+                return await App.addConsumer(event);
                 break;
             case 12:
+                    return await App.transferOwnershipToConsumer(event);
+                    break;
+            case 13:
+                return await App.purchaseItem(event);
+                break;
+            case 14:
                 return await App.fetchItemBufferOne(event);
                 break;
-            case 13:
+            case 15:
                 return await App.fetchItemBufferTwo(event);
                 break;
             }
@@ -180,22 +186,11 @@ App = {
 
     addFarmerId: async function(event) {
         event.preventDefault();
-        var processId = parseInt($(event.target).data('id'));
         var farmerId = $("#originFarmerID").val();
-        var supplyChainInstance;
         console.log('Inside Add Farmer ID');
         App.contracts.SupplyChain.deployed().then(async function(instance) {
-            supplyChainInstance = instance;
-            var currentOwner = await instance.owner();
-            console.log(`currentOwner = ${currentOwner}`);
-            var currentFarmerId = $("#originFarmerID").val().toLowerCase();
-            if (currentOwner.toLowerCase() !== currentFarmerId) {
-                console.log('inside the if conditional');
-                await instance.addFarmer(farmerId, {from: App.metamaskAccountID});
-                await instance.transferOwnership(farmerId, {from: App.metamaskAccountID});
-            }
-
-            console.log("Farmer is the current owner");
+            await instance.addFarmer(farmerId, {from: App.metamaskAccountID});
+            console.log("Farmer has been added");
         });
     },
 
@@ -209,20 +204,17 @@ App = {
         App.contracts.SupplyChain.deployed().then(async function(instance) {
             return instance.harvestItem(
                 App.upc, 
-                App.metamaskAccountID, 
+                farmerId, 
                 App.originFarmName, 
                 App.originFarmInformation, 
                 App.originFarmLatitude, 
                 App.originFarmLongitude, 
                 App.productNotes,
-                { from: farmerId }
+                { from: App.metamaskAccountID }
             );
         }).then(function(result) {
-            $("#ftc-item-harvest").html(result.logs[0].event);
-            $("#ftc-item-harvest").append(' ');
-            $("#ftc-item-harvest").append(result.receipt.from);
-            
             console.log('harvestItem',result);
+            $("#ftc-events").append('<li>' + result.logs[0].event + ' - ' + result.logs[0].transactionHash + '</li>');
         }).catch(function(err) {
             console.log(err);
         });
@@ -273,22 +265,13 @@ App = {
 
     addDistributor: function(event) {
         event.preventDefault();
-        var processId = parseInt($(event.target).data('id'));
-        var distributor = $("#distributorID").val();
-        var supplyChainInstance;
+        var currentDistributorId = $("#distributorID").val();
         console.log('Inside Add Distributor ID');
         App.contracts.SupplyChain.deployed().then(async function(instance) {
-            supplyChainInstance = instance;
-            var currentOwner = await instance.owner();
-            console.log(`currentOwner = ${currentOwner}`);
-            var currentDistributorId = $("#distributorID").val().toLowerCase();
-            if (currentOwner.toLowerCase() !== currentDistributorId) {
-                console.log('inside the if conditional');
-                await instance.addDistributor(currentDistributorId, {from: App.metamaskAccountID});
-                await instance.transferOwnership(currentDistributorId, {from: App.metamaskAccountID});
-            }
-
-            console.log("Distributor is the current owner");
+            console.log('inside the if conditional');
+            await instance.addDistributor(currentDistributorId, {from: App.metamaskAccountID});
+            await instance.transferOwnership(currentDistributorId, {from: App.metamaskAccountID});
+            console.log("Distributor added and is the current owner");
         });
     },
 
@@ -314,10 +297,28 @@ App = {
         App.contracts.SupplyChain.deployed().then(function(instance) {
             return instance.shipItem(App.upc, {from: App.metamaskAccountID});
         }).then(function(result) {
-            $("#ftc-item").text(result);
+            //$("#ftc-item").text(result);
             console.log('shipItem',result);
         }).catch(function(err) {
             console.log(err.message);
+        });
+    },
+
+    addRetailer: function(event) {
+        event.preventDefault();
+        console.log('Inside Add Retailer ID');
+        App.contracts.SupplyChain.deployed().then(async function(instance) {
+        await instance.addRetailer(App.retailerID, {from: App.ownerID});
+        console.log("Retailer added");
+        });
+    },
+
+    transferOwnershipToRetailer: function(event) {
+        event.preventDefault();
+        console.log('Inside Transfer Ownership to Retailer ');
+        App.contracts.SupplyChain.deployed().then(async function(instance) {
+        await instance.transferOwnership(App.retailerID, {from: App.distributorID});
+        console.log("Retailer is the current owner");
         });
     },
 
@@ -326,7 +327,7 @@ App = {
         var processId = parseInt($(event.target).data('id'));
 
         App.contracts.SupplyChain.deployed().then(function(instance) {
-            return instance.receiveItem(App.upc, {from: App.metamaskAccountID});
+            return instance.receiveItem(App.upc, {from: App.retailerID});
         }).then(function(result) {
             $("#ftc-item").text(result);
             console.log('receiveItem',result);
@@ -335,12 +336,30 @@ App = {
         });
     },
 
+    addConsumer: function(event) {
+        event.preventDefault();
+        console.log('Inside Add Consumer ID');
+        App.contracts.SupplyChain.deployed().then(async function(instance) {
+        await instance.addConsumer(App.consumerID, {from: App.ownerID});
+        console.log("Consumer added");
+        });
+    },
+
+    transferOwnershipToConsumer: function(event) {
+        event.preventDefault();
+        console.log('Inside Transfer Ownership to Consumer ');
+        App.contracts.SupplyChain.deployed().then(async function(instance) {
+        await instance.transferOwnership(App.consumerID, {from: App.retailerID});
+        console.log("Consumer is the current owner");
+        });
+    },
+
     purchaseItem: function (event) {
         event.preventDefault();
         var processId = parseInt($(event.target).data('id'));
 
         App.contracts.SupplyChain.deployed().then(function(instance) {
-            return instance.purchaseItem(App.upc, {from: App.metamaskAccountID});
+            return instance.purchaseItem(App.upc, {from: App.consumerID});
         }).then(function(result) {
             $("#ftc-item").text(result);
             console.log('purchaseItem',result);
