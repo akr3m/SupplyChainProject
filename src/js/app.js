@@ -170,8 +170,8 @@ App = {
                 return await App.addConsumer(event);
                 break;
             case 12:
-                    return await App.transferOwnershipToConsumer(event);
-                    break;
+                return await App.transferOwnershipToConsumer(event);
+                break;
             case 13:
                 return await App.purchaseItem(event);
                 break;
