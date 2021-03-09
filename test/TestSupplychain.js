@@ -59,7 +59,7 @@ contract('SupplyChain', function(accounts) {
         // Mark an item as Harvested by calling function harvestItem()
         console.log(await supplyChain.owner());
         await supplyChain.addFarmer(originFarmerID, {from: ownerID});
-        await supplyChain.harvestItem(upc, originFarmerID, originFarmName, originFarmInformation, originFarmLatitude, originFarmLongitude, productNotes, {from: ownerID})
+        await supplyChain.harvestItem(upc, originFarmerID, originFarmName, originFarmInformation, originFarmLatitude, originFarmLongitude, productNotes, {from: originFarmerID})
 
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
         var resultBufferOne = await supplyChain.fetchItemBufferOne.call(upc)
@@ -68,7 +68,7 @@ contract('SupplyChain', function(accounts) {
         // Verify the result set
         assert.equal(resultBufferOne[0], sku, 'Error: Invalid item SKU')
         assert.equal(resultBufferOne[1], upc, 'Error: Invalid item UPC')
-        assert.equal(resultBufferOne[2], ownerID, 'Error: Missing or Invalid ownerID')
+        assert.equal(resultBufferOne[2], originFarmerID, 'Error: Missing or Invalid ownerID')
         assert.equal(resultBufferOne[3], originFarmerID, 'Error: Missing or Invalid originFarmerID')
         assert.equal(resultBufferOne[4], originFarmName, 'Error: Missing or Invalid originFarmName')
         assert.equal(resultBufferOne[5], originFarmInformation, 'Error: Missing or Invalid originFarmInformation')
@@ -96,7 +96,7 @@ contract('SupplyChain', function(accounts) {
         });
 
         // Mark an item as Processed by calling function processtItem()
-        await supplyChain.processItem(upc, {from: ownerID});
+        await supplyChain.processItem(upc, {from: originFarmerID});
 
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
         var resultBufferOne = await supplyChain.fetchItemBufferOne.call(upc);
@@ -105,7 +105,7 @@ contract('SupplyChain', function(accounts) {
         // Verify the result set
         assert.equal(resultBufferOne[0], sku, 'Error: Invalid item SKU')
         assert.equal(resultBufferOne[1], upc, 'Error: Invalid item UPC')
-        assert.equal(resultBufferOne[2], ownerID, 'Error: Missing or Invalid ownerID')
+        assert.equal(resultBufferOne[2], originFarmerID, 'Error: Missing or Invalid ownerID')
         assert.equal(resultBufferOne[3], originFarmerID, 'Error: Missing or Invalid originFarmerID')
         assert.equal(resultBufferOne[4], originFarmName, 'Error: Missing or Invalid originFarmName')
         assert.equal(resultBufferOne[5], originFarmInformation, 'Error: Missing or Invalid originFarmInformation')
@@ -131,7 +131,7 @@ contract('SupplyChain', function(accounts) {
         });
 
         // Mark an item as Packed by calling function packItem()
-         await supplyChain.packItem(upc, {from: ownerID});
+         await supplyChain.packItem(upc, {from: originFarmerID});
 
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
         var resultBufferOne = await supplyChain.fetchItemBufferOne.call(upc);
@@ -140,7 +140,7 @@ contract('SupplyChain', function(accounts) {
         // Verify the result set
         assert.equal(resultBufferOne[0], sku, 'Error: Invalid item SKU')
         assert.equal(resultBufferOne[1], upc, 'Error: Invalid item UPC')
-        assert.equal(resultBufferOne[2], ownerID, 'Error: Missing or Invalid ownerID')
+        assert.equal(resultBufferOne[2], originFarmerID, 'Error: Missing or Invalid ownerID')
         assert.equal(resultBufferOne[3], originFarmerID, 'Error: Missing or Invalid originFarmerID')
         assert.equal(resultBufferOne[4], originFarmName, 'Error: Missing or Invalid originFarmName')
         assert.equal(resultBufferOne[5], originFarmInformation, 'Error: Missing or Invalid originFarmInformation')
@@ -166,7 +166,7 @@ contract('SupplyChain', function(accounts) {
         });
 
         // Mark an item as ForSale by calling function sellItem()
-        await supplyChain.sellItem(upc, productPrice, {from: ownerID});
+        await supplyChain.sellItem(upc, productPrice, {from: originFarmerID});
 
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
         var resultBufferOne = await supplyChain.fetchItemBufferOne.call(upc);
@@ -175,7 +175,7 @@ contract('SupplyChain', function(accounts) {
         // Verify the result set
         assert.equal(resultBufferOne[0], sku, 'Error: Invalid item SKU')
         assert.equal(resultBufferOne[1], upc, 'Error: Invalid item UPC')
-        assert.equal(resultBufferOne[2], ownerID, 'Error: Missing or Invalid ownerID')
+        assert.equal(resultBufferOne[2], originFarmerID, 'Error: Missing or Invalid ownerID')
         assert.equal(resultBufferOne[3], originFarmerID, 'Error: Missing or Invalid originFarmerID')
         assert.equal(resultBufferOne[4], originFarmName, 'Error: Missing or Invalid originFarmName')
         assert.equal(resultBufferOne[5], originFarmInformation, 'Error: Missing or Invalid originFarmInformation')
@@ -211,7 +211,6 @@ contract('SupplyChain', function(accounts) {
         // Mark an item as Sold by calling function buyItem()
         var currentOwner = await supplyChain.owner();
         await supplyChain.addDistributor(distributorID, {from: ownerID});
-        await supplyChain.transferOwnership(distributorID, {from: ownerID});
         var receipt = await supplyChain.buyItem(upc, { from: distributorID, value: productPrice });
         
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
@@ -283,7 +282,6 @@ contract('SupplyChain', function(accounts) {
 
         // Mark an item as Received by calling function receiveItem()
         await supplyChain.addRetailer(retailerID, {from: ownerID});
-        await supplyChain.transferOwnership(retailerID, {from: distributorID});
         await supplyChain.receiveItem(upc, { from: retailerID });
 
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
@@ -314,7 +312,6 @@ contract('SupplyChain', function(accounts) {
 
         // Mark an item as Purchased by calling function purchaseItem()
         await supplyChain.addConsumer(consumerID, {from: ownerID});
-        await supplyChain.transferOwnership(consumerID, {from: retailerID});
         await supplyChain.purchaseItem(upc, { from: consumerID });
 
         // Retrieve the just now saved item from blockchain by calling function fetchItem()
