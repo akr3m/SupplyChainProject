@@ -76,7 +76,8 @@ App = {
         }
         // If no injected web3 instance is detected, fall back to Ganache
         else {
-            App.web3Provider = new Web3.providers.HttpProvider('http://localhost:8545');
+            //App.web3Provider = new Web3.providers.HttpProvider('http://localhost:8545');
+            App.web3Provider = new Web3.providers.HttpProvider('https://rinkeby.infura.io/v3/ac581050214241a2bd7b9bd0b504597d');
             console.log('connected via localhost:8545');
         }
 
@@ -181,6 +182,9 @@ App = {
             case 15:
                 return await App.fetchItemBufferTwo(event);
                 break;
+            case 16:
+                return await App.resetOwnership(event);
+                break;
             }
     },
 
@@ -214,6 +218,7 @@ App = {
             );
         }).then(function(result) {
             console.log('harvestItem',result);
+            $("#ftc-item").text(result);
             $("#ftc-events").append('<li>' + result.logs[0].event + ' - ' + result.logs[0].transactionHash + '</li>');
         }).catch(function(err) {
             console.log(err);
@@ -227,6 +232,7 @@ App = {
         App.contracts.SupplyChain.deployed().then(function(instance) {
             return instance.processItem(App.upc, {from: App.metamaskAccountID});
         }).then(function(result) {
+            $("#ftc-item").text(result);
             console.log('processItem',result);
         }).catch(function(err) {
             console.log(err.message);
@@ -240,7 +246,7 @@ App = {
         App.contracts.SupplyChain.deployed().then(function(instance) {
             return instance.packItem(App.upc, {from: App.metamaskAccountID});
         }).then(function(result) {
-            //$("#ftc-item").text(result);
+            $("#ftc-item").text(result);
             console.log('packItem',result);
         }).catch(function(err) {
             console.log(err.message);
@@ -256,7 +262,7 @@ App = {
             console.log('productPrice',productPrice);
             return instance.sellItem(App.upc, App.productPrice, {from: App.metamaskAccountID});
         }).then(function(result) {
-            //$("#ftc-item").text(result);
+            $("#ftc-item").text(result);
             console.log('sellItem',result);
         }).catch(function(err) {
             console.log(err.message);
@@ -280,10 +286,10 @@ App = {
         var processId = parseInt($(event.target).data('id'));
 
         App.contracts.SupplyChain.deployed().then(function(instance) {
-            const walletValue = web3.toWei(3, "ether");
+            const walletValue = web3.toWei(1, "ether");
             return instance.buyItem(App.upc, {from: App.metamaskAccountID, value: walletValue});
         }).then(function(result) {
-            //$("#ftc-item").text(result);
+            $("#ftc-item").text(result);
             console.log('buyItem',result);
         }).catch(function(err) {
             console.log(err.message);
@@ -297,7 +303,7 @@ App = {
         App.contracts.SupplyChain.deployed().then(function(instance) {
             return instance.shipItem(App.upc, {from: App.metamaskAccountID});
         }).then(function(result) {
-            //$("#ftc-item").text(result);
+            $("#ftc-item").text(result);
             console.log('shipItem',result);
         }).catch(function(err) {
             console.log(err.message);
@@ -380,7 +386,8 @@ App = {
           $("#ftc-item").text(result);
           console.log('fetchItemBufferOne', result);
         }).catch(function(err) {
-          console.log(err.message);
+        
+          console.log('error',err.message);
         });
     },
 
@@ -417,6 +424,21 @@ App = {
           console.log(err.message);
         });
         
+    },
+
+    resetOwnership: function(event) {
+        event.preventDefault();
+        console.log('Inside Reset Ownership');
+        App.contracts.SupplyChain.deployed().then(async function(instance) {
+            var currentOwner = await instance.owner();
+            var contractOwnerId = App.ownerID;
+            if (currentOwner.toLowerCase() !== contractOwnerId.toLowerCase()) {
+                await instance.transferOwnership(App.ownerID, {from: App.consumerID});
+            }
+            console.log('currentOwner', currentOwner);
+        
+        console.log("Ownership reset");
+        });
     }
 };
 
